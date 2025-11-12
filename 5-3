@@ -1,0 +1,135 @@
+const int buttonPin = 4;
+const int redPin = 5;
+const int greenPin = 7;
+const int bluePin = 6;
+
+unsigned long lastChange = 0;
+unsigned long interval = 2000; // 初始為 2 秒
+int mode = 0; // 0=輪播, 1=黃閃爍, 2=紅閃爍
+bool blinkState = false;
+
+bool lastButtonState = HIGH;
+bool currentButtonState = HIGH;
+
+unsigned long pressStartTime = 0;
+bool longPressMode = false;
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+  allOff();
+}
+
+void loop() {
+  currentButtonState = digitalRead(buttonPin);
+  unsigned long now = millis();
+
+  // 按下瞬間記錄時間
+  if (lastButtonState == HIGH && currentButtonState == LOW) {
+    pressStartTime = now;
+  }
+
+  // 持續按住超過 1.5 秒 → 進入紅藍交替模式
+  if (currentButtonState == LOW && (now - pressStartTime >= 1500)) {
+    longPressMode = true;
+    interval = 500;
+    if (now - lastChange >= interval) {
+      lastChange = now;
+      blinkState = !blinkState;
+      if (blinkState) {
+        setColorByState(2); // 紅
+      } else {
+        setColorByState(3); // 藍
+      }
+    }
+    lastButtonState = currentButtonState;
+    return;
+  }
+
+  // 放開按鈕 → 結束長按模式，回到原本流程
+  if (lastButtonState == LOW && currentButtonState == HIGH) {
+    if (longPressMode) {
+      longPressMode = false;
+      lastChange = now;
+      blinkState = false;
+      allOff();
+      return;
+    } else {
+      // 一般短按 → 切換模式
+      mode = (mode + 1) % 3;
+      lastChange = now;
+      blinkState = false;
+    }
+  }
+
+  // 模式執行（非長按）
+  if (!longPressMode) {
+    if (mode == 0) {
+      interval = 2000;
+      if (now - lastChange >= interval) {
+        lastChange = now;
+        int state = (now / interval) % 3;
+        setColorByState(state);
+      }
+    } else if (mode == 1) {
+      interval = 500;
+      if (now - lastChange >= interval) {
+        lastChange = now;
+        blinkState = !blinkState;
+        if (blinkState) {
+          setColorByState(1); // 黃
+        } else {
+          allOff();
+        }
+      }
+    } else if (mode == 2) {
+      interval = 500;
+      if (now - lastChange >= interval) {
+        lastChange = now;
+        blinkState = !blinkState;
+        if (blinkState) {
+          setColorByState(2); // 紅
+        } else {
+          allOff();
+        }
+      }
+    }
+  }
+
+  lastButtonState = currentButtonState;
+  delay(10); // 去彈跳
+}
+
+void setColorByState(int s) {
+  switch (s) {
+    case 0: // 綠
+      digitalWrite(redPin, HIGH);
+      digitalWrite(greenPin, LOW);
+      digitalWrite(bluePin, HIGH);
+      break;
+    case 1: // 黃 = 紅 + 綠
+      digitalWrite(redPin, LOW);
+      digitalWrite(greenPin, LOW);
+      digitalWrite(bluePin, HIGH);
+      break;
+    case 2: // 紅
+      digitalWrite(redPin, LOW);
+      digitalWrite(greenPin, HIGH);
+      digitalWrite(bluePin, HIGH);
+      break;
+    case 3: // 藍
+      digitalWrite(redPin, HIGH);
+      digitalWrite(greenPin, HIGH);
+      digitalWrite(bluePin, LOW);
+      break;
+  }
+}
+
+void allOff() {
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, HIGH);
+}
