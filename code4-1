@@ -1,0 +1,58 @@
+const int RledPin = 9;
+const int GledPin = 10;
+const int BledPin = 11;
+const int buttonPin = 8;
+
+int colorIndex = 0;
+const int totalColors = 8; 
+bool buttonPressed = false;
+
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50; 
+
+void setup() {
+  pinMode(RledPin, OUTPUT);
+  pinMode(GledPin, OUTPUT);
+  pinMode(BledPin, OUTPUT);
+  pinMode(buttonPin, INPUT);
+  showColor(colorIndex);
+}
+
+void loop() {
+  int reading = digitalRead(buttonPin);
+
+  if (reading == HIGH && !buttonPressed && (millis() - lastDebounceTime > debounceDelay)) {
+    buttonPressed = true;
+    lastDebounceTime = millis();
+
+    
+    colorIndex = (colorIndex + 1) % totalColors;
+    showColor(colorIndex);
+  }
+
+  
+  if (reading == LOW) {
+    buttonPressed = false;
+  }
+}
+
+
+void showColor(int index) {
+  switch (index) {
+    case 0: setColor(255, 0, 0); break;   
+    case 1: setColor(0, 255, 0); break;    
+    case 2: setColor(0, 0, 255); break;   
+    case 3: setColor(255, 255, 0); break;  
+    case 4: setColor(0, 255, 255); break;  
+    case 5: setColor(255, 0, 255); break;  
+    case 6: setColor(255, 255, 255); break;
+    case 7: setColor(0, 0, 0); break;     
+  }
+}
+
+
+void setColor(int r, int g, int b) {
+  analogWrite(RledPin, r);
+  analogWrite(GledPin, g);
+  analogWrite(BledPin, b);
+}
