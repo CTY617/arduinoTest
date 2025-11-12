@@ -1,47 +1,67 @@
-const int pushButton = 2;
-const int redPin = 3;
-const int greenPin = 4;
-const int bluePin = 5;
+const int buttonPin = 4;
+const int redPin = 5;
+const int greenPin = 7;
+const int bluePin = 6;
 
-bool currentButtonState = HIGH;
-bool lastButtonState = HIGH;
-
-int cycleColor = 0; // 0=紅, 1=綠, 2=藍
-unsigned long lastChangeTime = 0;
-const unsigned long interval = 2000; // 2秒
+unsigned long lastChange = 0;
+const unsigned long interval = 1000; // 每秒切換
+int state = 0; // 0=green, 1=yellow, 2=red
 
 void setup() {
+  pinMode(buttonPin, INPUT_PULLUP); // 按鈕接地，按下為 LOW
   pinMode(redPin, OUTPUT);
   pinMode(greenPin, OUTPUT);
   pinMode(bluePin, OUTPUT);
-  pinMode(pushButton, INPUT_PULLUP);
 
-  digitalWrite(redPin, HIGH);
-  digitalWrite(greenPin, HIGH);
-  digitalWrite(bluePin, HIGH);
+  // 初始顯示
+  setColorByState(state);
 }
 
 void loop() {
-  currentButtonState = digitalRead(pushButton);
+  bool pressed = digitalRead(buttonPin) == LOW;
 
-  if (currentButtonState == LOW) {
-    // 按下按鈕時全部熄滅
-    digitalWrite(redPin, HIGH);
-    digitalWrite(greenPin, HIGH);
-    digitalWrite(bluePin, HIGH);
-  } else {
-    // 沒按下按鈕時輪流播放
-    unsigned long currentTime = millis();
-    if (currentTime - lastChangeTime >= interval) {
-      cycleColor = (cycleColor + 1) % 3; // 循環 0→1→2→0
-      lastChangeTime = currentTime;
-    }
-
-    // 根據 cycleColor 顯示顏色（共陽邏輯：LOW = 亮）
-    digitalWrite(redPin, cycleColor == 0 ? LOW : HIGH);
-    digitalWrite(greenPin, cycleColor == 1 ? LOW : HIGH);
-    digitalWrite(bluePin, cycleColor == 2 ? LOW : HIGH);
+  if (pressed) {
+    // 按住時全部熄滅（共陽極：HIGH 為關）
+    allOff();
+    // 不改變 lastChange 或 state，放開後繼續上次順序
+    return;
   }
 
-  lastButtonState = currentButtonState;
+  // 若未按下，按時序每秒切換
+  unsigned long now = millis();
+  if (now - lastChange >= interval) {
+    lastChange = now;
+    state = (state + 1) % 3;
+    setColorByState(state);
+  }
+
+  // 小睡一下以減少 CPU 使用（非必要）
+  delay(10);
+}
+
+void setColorByState(int s) {
+  switch (s) {
+    case 0: // 綠
+      digitalWrite(redPin, HIGH);
+      digitalWrite(greenPin, LOW);
+      digitalWrite(bluePin, HIGH);
+      break;
+    case 1: // 黃 = 紅 + 綠
+      digitalWrite(redPin, LOW);
+      digitalWrite(greenPin, LOW);
+      digitalWrite(bluePin, HIGH);
+      break;
+    case 2: // 紅
+      digitalWrite(redPin, LOW);
+      digitalWrite(greenPin, HIGH);
+      digitalWrite(bluePin, HIGH);
+      break;
+  }
+}
+
+void allOff() {
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, HIGH);
+    }
 }
