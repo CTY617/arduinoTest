@@ -1,0 +1,52 @@
+const int pushButton = 2;
+const int redPin = 3;
+const int greenPin = 4;
+const int bluePin = 5;
+
+bool lastButtonState = HIGH;
+bool currentButtonState = HIGH;
+bool ledOn = false;
+int currentColor = -1;
+
+void setup() {
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+  pinMode(pushButton, INPUT_PULLUP);
+
+  // 熄滅所有 LED（共陽邏輯：HIGH = 熄滅）
+  digitalWrite(redPin, HIGH);
+  digitalWrite(greenPin, HIGH);
+  digitalWrite(bluePin, HIGH);
+
+  randomSeed(analogRead(0));
+}
+
+void loop() {
+  currentButtonState = digitalRead(pushButton);
+
+  // 按下按鈕（HIGH → LOW）
+  if (lastButtonState == HIGH && currentButtonState == LOW) {
+    ledOn = true;
+    currentColor = random(3);
+  }
+
+  // 放開按鈕（LOW → HIGH）
+  if (lastButtonState == LOW && currentButtonState == HIGH) {
+    ledOn = false;
+  }
+
+  // 控制 LED（共陽邏輯：LOW = 亮）
+  if (ledOn) {
+    digitalWrite(redPin, currentColor == 0 ? LOW : HIGH);
+    digitalWrite(greenPin, currentColor == 1 ? LOW : HIGH);
+    digitalWrite(bluePin, currentColor == 2 ? LOW : HIGH);
+  } else {
+    digitalWrite(redPin, HIGH);
+    digitalWrite(greenPin, HIGH);
+    digitalWrite(bluePin, HIGH);
+  }
+
+  lastButtonState = currentButtonState;
+  delay(50); // 去彈跳
+}
